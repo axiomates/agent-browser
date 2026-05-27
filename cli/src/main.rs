@@ -60,12 +60,19 @@ fn print_json_error_with_type(message: impl AsRef<str>, error_type: &str) {
     }));
 }
 
+fn should_send_hide_scrollbars_launch_option(
+    cli_hide_scrollbars: bool,
+    hide_scrollbars: bool,
+) -> bool {
+    cli_hide_scrollbars || !hide_scrollbars
+}
+
 fn apply_hide_scrollbars_launch_option(
     launch_cmd: &mut serde_json::Value,
     cli_hide_scrollbars: bool,
     hide_scrollbars: bool,
 ) {
-    if cli_hide_scrollbars || !hide_scrollbars {
+    if should_send_hide_scrollbars_launch_option(cli_hide_scrollbars, hide_scrollbars) {
         launch_cmd["hideScrollbars"] = json!(hide_scrollbars);
     }
 }
@@ -1075,7 +1082,10 @@ fn main() {
         || flags.args.is_some()
         || flags.user_agent.is_some()
         || flags.allow_file_access
-        || flags.cli_hide_scrollbars
+        || should_send_hide_scrollbars_launch_option(
+            flags.cli_hide_scrollbars,
+            flags.hide_scrollbars,
+        )
         || flags.color_scheme.is_some()
         || flags.download_path.is_some()
         || flags.engine.is_some()
@@ -1511,6 +1521,10 @@ mod tests {
 
     #[test]
     fn test_hide_scrollbars_launch_option_serialization() {
+        assert!(!should_send_hide_scrollbars_launch_option(false, true));
+        assert!(should_send_hide_scrollbars_launch_option(false, false));
+        assert!(should_send_hide_scrollbars_launch_option(true, true));
+
         let mut default_cmd = json!({ "action": "launch" });
         apply_hide_scrollbars_launch_option(&mut default_cmd, false, true);
         assert!(default_cmd.get("hideScrollbars").is_none());

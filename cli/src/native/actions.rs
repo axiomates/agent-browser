@@ -196,6 +196,7 @@ fn launch_hash(opts: &LaunchOptions) -> u64 {
     opts.proxy_password.hash(&mut h);
     opts.user_agent.hash(&mut h);
     opts.allow_file_access.hash(&mut h);
+    opts.hide_scrollbars.hash(&mut h);
     h.finish()
 }
 
@@ -1687,6 +1688,9 @@ fn launch_options_from_env() -> LaunchOptions {
     let headed = env::var("AGENT_BROWSER_HEADED")
         .map(|v| v == "1" || v == "true")
         .unwrap_or(false);
+    let hide_scrollbars = env::var("AGENT_BROWSER_HIDE_SCROLLBARS")
+        .map(|v| !matches!(v.to_ascii_lowercase().as_str(), "0" | "false" | "no" | ""))
+        .unwrap_or(true);
 
     let extensions: Option<Vec<String>> = env::var("AGENT_BROWSER_EXTENSIONS").ok().map(|v| {
         v.split([',', '\n'])
@@ -1722,6 +1726,7 @@ fn launch_options_from_env() -> LaunchOptions {
             .unwrap_or(false),
         color_scheme: env::var("AGENT_BROWSER_COLOR_SCHEME").ok(),
         download_path: env::var("AGENT_BROWSER_DOWNLOAD_PATH").ok(),
+        hide_scrollbars,
         viewport_size: None,
         use_real_keychain: false,
     }
@@ -1890,6 +1895,10 @@ async fn handle_launch(cmd: &Value, state: &mut DaemonState) -> Result<Value, St
             .get("downloadPath")
             .and_then(|v| v.as_str())
             .map(String::from),
+        hide_scrollbars: cmd
+            .get("hideScrollbars")
+            .and_then(|v| v.as_bool())
+            .unwrap_or(true),
         viewport_size: None,
         use_real_keychain: false,
     };
@@ -8423,22 +8432,34 @@ mod tests {
 
     #[test]
     fn test_launch_options_from_env_defaults() {
-        let _guard = EnvGuard::new(&["AGENT_BROWSER_HEADED"]);
+        let guard = EnvGuard::new(&["AGENT_BROWSER_HEADED", "AGENT_BROWSER_HIDE_SCROLLBARS"]);
+        guard.remove("AGENT_BROWSER_HEADED");
+        guard.remove("AGENT_BROWSER_HIDE_SCROLLBARS");
         let opts = launch_options_from_env();
         assert!(opts.headless);
         assert!(opts.args.is_empty());
         assert!(!opts.allow_file_access);
+        assert!(opts.hide_scrollbars);
     }
 
     #[test]
     fn test_launch_options_from_env_headed_flag() {
-        let _guard = EnvGuard::new(&["AGENT_BROWSER_HEADED"]);
-        _guard.set("AGENT_BROWSER_HEADED", "1");
+        let guard = EnvGuard::new(&["AGENT_BROWSER_HEADED", "AGENT_BROWSER_HIDE_SCROLLBARS"]);
+        guard.set("AGENT_BROWSER_HEADED", "1");
+        guard.remove("AGENT_BROWSER_HIDE_SCROLLBARS");
         let opts = launch_options_from_env();
         assert!(
             !opts.headless,
             "AGENT_BROWSER_HEADED=1 should set headless=false"
         );
+    }
+
+    #[test]
+    fn test_launch_options_from_env_hide_scrollbars_false() {
+        let guard = EnvGuard::new(&["AGENT_BROWSER_HIDE_SCROLLBARS"]);
+        guard.set("AGENT_BROWSER_HIDE_SCROLLBARS", "false");
+        let opts = launch_options_from_env();
+        assert!(!opts.hide_scrollbars);
     }
 
     #[test]

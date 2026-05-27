@@ -741,6 +741,7 @@ fn main() {
         proxy_password: proxy_password.as_deref(),
         ignore_https_errors: flags.ignore_https_errors,
         allow_file_access: flags.allow_file_access,
+        hide_scrollbars: flags.hide_scrollbars,
         profile: flags.profile.as_deref(),
         state: flags.state.as_deref(),
         provider: flags.provider.as_deref(),
@@ -813,6 +814,7 @@ fn main() {
             },
             flags.ignore_https_errors.then_some("--ignore-https-errors"),
             flags.cli_allow_file_access.then_some("--allow-file-access"),
+            flags.cli_hide_scrollbars.then_some("--hide-scrollbars"),
             flags.cli_download_path.then_some("--download-path"),
             flags.cli_headed.then_some("--headed"),
         ]
@@ -1063,6 +1065,7 @@ fn main() {
         || flags.args.is_some()
         || flags.user_agent.is_some()
         || flags.allow_file_access
+        || flags.cli_hide_scrollbars
         || flags.color_scheme.is_some()
         || flags.download_path.is_some()
         || flags.engine.is_some()
@@ -1135,6 +1138,10 @@ fn main() {
 
         if flags.allow_file_access {
             launch_cmd["allowFileAccess"] = json!(true);
+        }
+
+        if !flags.hide_scrollbars {
+            launch_cmd["hideScrollbars"] = json!(false);
         }
 
         if let Some(ref cs) = flags.color_scheme {

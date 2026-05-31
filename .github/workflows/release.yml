@@ -216,6 +216,17 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Download binary artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: Generate native binary checksum manifest
+        run: |
+          mkdir -p release-assets
+          find artifacts -type f -name 'agent-browser-*' -exec cp {} release-assets/ \;
+          node scripts/generate-native-manifest.js release-assets
+
       - name: Verify npm package contents
         run: pnpm run pack:check
 

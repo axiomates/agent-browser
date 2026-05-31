@@ -2,7 +2,7 @@
 
 ## Global installation (recommended)
 
-Installs a small launcher, then downloads the native Rust binary for your platform from the GitHub release:
+Installs a small launcher, then downloads and verifies the native Rust binary for your platform from the GitHub release:
 
 ```bash
 npm install -g agent-browser
@@ -28,7 +28,7 @@ npx agent-browser install  # Download Chrome (first time)
 ```
 
 Then use via `npx` or `package.json` scripts.
-The npm install downloads only the native binary for the current platform.
+The npm install downloads only the native binary for the current platform. If install scripts are disabled, the first `agent-browser` run retries the verified download and repairs the command to use the native binary directly.
 
 ## Homebrew (macOS)
 

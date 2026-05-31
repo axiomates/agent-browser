@@ -1,15 +1,16 @@
 #!/usr/bin/env node
 
 /**
- * Verifies that the npm package ships the JS launcher and install scripts, but
- * not the platform-specific native binaries. Those binaries are release assets
- * and are downloaded by scripts/postinstall.js for the current platform.
+ * Verifies that the npm package ships the JS launcher, install scripts, and
+ * checksum manifest, but not the platform-specific native binaries. Those
+ * binaries are release assets and are downloaded for the current platform.
  */
 
 import { execFileSync } from 'child_process';
-import { mkdtempSync, rmSync } from 'fs';
+import { mkdtempSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 import { join } from 'path';
+import { BINARY_MANIFEST_PATH, EXPECTED_BINARY_NAMES } from './native-binary.js';
 
 const npmCache = mkdtempSync(join(tmpdir(), 'agent-browser-npm-cache-'));
 let output;
@@ -38,6 +39,8 @@ const fileSet = new Set(files);
 const requiredFiles = [
   'bin/agent-browser.js',
   'scripts/postinstall.js',
+  'scripts/native-binary.js',
+  'scripts/native-binaries.json',
   'package.json',
   'README.md',
 ];
@@ -67,6 +70,26 @@ if (pack.unpackedSize > maxUnpackedSize) {
   console.error(
     `npm package is too large: ${pack.unpackedSize} bytes, expected <= ${maxUnpackedSize}`
   );
+  process.exit(1);
+}
+
+const manifest = JSON.parse(readFileSync(BINARY_MANIFEST_PATH, 'utf8'));
+const invalidManifestEntries = EXPECTED_BINARY_NAMES.filter((name) => {
+  const entry = manifest.binaries?.[name];
+  return (
+    !entry ||
+    typeof entry.sha256 !== 'string' ||
+    !/^[a-f0-9]{64}$/.test(entry.sha256) ||
+    !Number.isInteger(entry.size) ||
+    entry.size <= 100000
+  );
+});
+
+if (invalidManifestEntries.length > 0) {
+  console.error('native binary checksum manifest is missing valid entries:');
+  for (const file of invalidManifestEntries) {
+    console.error(`  ${file}`);
+  }
   process.exit(1);
 }
 

@@ -21,8 +21,14 @@ services:
         set -euo pipefail
 
         require_dashboard_assets() {
-          if [ ! -f /packages/dashboard/out/index.html ]; then
+          if [ ! -f /packages/dashboard/out/index.html ] || [ ! -d /packages/dashboard/out/_next ]; then
             echo "ERROR: Dashboard assets are missing."
+            echo "Run pnpm run build:dashboard before using docker compose directly."
+            exit 1
+          fi
+
+          if grep -q "Dashboard not built. Run:" /packages/dashboard/out/index.html; then
+            echo "ERROR: Dashboard assets contain the Rust placeholder page."
             echo "Run pnpm run build:dashboard before using docker compose directly."
             exit 1
           fi
@@ -65,8 +71,14 @@ services:
         set -euo pipefail
 
         require_dashboard_assets() {
-          if [ ! -f /packages/dashboard/out/index.html ]; then
+          if [ ! -f /packages/dashboard/out/index.html ] || [ ! -d /packages/dashboard/out/_next ]; then
             echo "ERROR: Dashboard assets are missing."
+            echo "Run pnpm run build:dashboard before using docker compose directly."
+            exit 1
+          fi
+
+          if grep -q "Dashboard not built. Run:" /packages/dashboard/out/index.html; then
+            echo "ERROR: Dashboard assets contain the Rust placeholder page."
             echo "Run pnpm run build:dashboard before using docker compose directly."
             exit 1
           fi
@@ -105,8 +117,14 @@ services:
         set -euo pipefail
 
         require_dashboard_assets() {
-          if [ ! -f /packages/dashboard/out/index.html ]; then
+          if [ ! -f /packages/dashboard/out/index.html ] || [ ! -d /packages/dashboard/out/_next ]; then
             echo "ERROR: Dashboard assets are missing."
+            echo "Run pnpm run build:dashboard before using docker compose directly."
+            exit 1
+          fi
+
+          if grep -q "Dashboard not built. Run:" /packages/dashboard/out/index.html; then
+            echo "ERROR: Dashboard assets contain the Rust placeholder page."
             echo "Run pnpm run build:dashboard before using docker compose directly."
             exit 1
           fi
